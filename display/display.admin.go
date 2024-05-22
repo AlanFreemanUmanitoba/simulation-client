@@ -31,3 +31,10 @@ func AdminDashboard(ctx *gin.Context) {
 // TODO not done yet
 func AdminReset(ctx *gin.Context) {
 }
+
+func Lock(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "choose-player.html", gin.H{
+		"Title": "Choose player",
+		"users": models.AdminUserList,
+	})
+}

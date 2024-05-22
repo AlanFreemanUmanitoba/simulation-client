@@ -12,6 +12,7 @@ type User struct {
 	UserName            string         `json:"username"`              // Repeats the key in the map,for ease of use
 	ApiKey              string         `json:"api_key"`               // The api key allocated to this user
 	CurrentSimulationID int            `json:"current_simulation_id"` // the id of the simulation that this user is currently using
+	IsLocked            bool           `json:"is_locked"`             // is this user locked as a player?
 	LastVisitedPage     string         // Remember what the user was looking at (used when an action is requested)
 	Datasets            []*Dataset     // Repository for the data objects generated during the simulation
 	TimeStamp           int            // Indexes Datasets. Selects the stage that the simulation has reached

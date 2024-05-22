@@ -1,0 +1,20 @@
+{{ template "header.html" .}}
+
+<div class="w3-container w3-center" style="width:75%; margin:auto; padding-top: 100px;">
+    <div class="w3-medium">
+        <header class="w3-container w3-blue">
+            <h3 class="w3-center">Choose a player</h3>
+        </header>
+        <ul class="w3-ul" style="width:30%;margin:auto">
+            {{ range .users}}
+            <li class="w3-hover-blue" >
+                {{ if .IsLocked}}
+                <a class="w3-disabled" style="text-decoration:none"  >{{ .UserName}}</a>
+                {{ else }}
+                <a href="/play-as/{{ .UserName }}" style="text-decoration:none"  >{{ .UserName}}</a>
+                {{ end }}
+            </li>
+            {{ end }}
+    </div>
+</div>
+{{ template "footer.html" .}}

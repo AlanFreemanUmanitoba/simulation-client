@@ -4,6 +4,7 @@ import (
 	"capfront/display"
 	"capfront/fetch"
 	"fmt"
+	"net/http"
 )
 
 func main() {
@@ -11,6 +12,11 @@ func main() {
 	display.Router.LoadHTMLGlob("./templates/**/*") // load the templates
 
 	fmt.Println("Welcome to capitalism")
+
+	dir := http.Dir("./static")
+	fs := http.FileServer(dir)
+	mux := http.NewServeMux()
+	mux.Handle("/", fs)
 
 	display.Router.GET("/action/:action", display.ActionHandler)
 
@@ -35,6 +41,7 @@ func main() {
 	display.Router.GET("/user/dashboard", display.UserDashboard)
 	display.Router.GET("/admin/dashboard", display.AdminDashboard)
 	display.Router.GET("/admin/reset", display.AdminReset)
+	display.Router.GET("/admin/choose-players", display.Lock)
 
 	display.Router.GET("/back", display.Back)
 	display.Router.GET("/forward", display.Forward)
