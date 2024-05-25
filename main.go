@@ -43,6 +43,8 @@ func main() {
 	display.Router.GET("/admin/reset", display.AdminReset)
 	display.Router.GET("/admin/choose-players", display.Lock)
 
+	display.Router.GET("/admin/play-as/:username", display.SelectUser)
+
 	display.Router.GET("/back", display.Back)
 	display.Router.GET("/forward", display.Forward)
 

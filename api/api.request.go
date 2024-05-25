@@ -6,6 +6,7 @@ package api
 import (
 	"bytes"
 	"capfront/utils"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,7 +37,7 @@ func ServerRequest(apiKey string, url string) ([]byte, error) {
 	res, _ := client.Do(resp)
 	if res == nil {
 		utils.Trace(utils.Red, "Server is down or misbehaving\n")
-		return nil, nil
+		return nil, errors.New("server did not respond")
 	}
 
 	defer res.Body.Close()
@@ -45,7 +46,7 @@ func ServerRequest(apiKey string, url string) ([]byte, error) {
 	if res.StatusCode != 200 {
 		utils.Trace(utils.Red, fmt.Sprintf("Server rejected the request with status %s\n", res.Status))
 		utils.Trace(utils.Red, fmt.Sprintf("It said %s\n", string(b)))
-		return nil, fmt.Errorf(string(b))
+		return nil, errors.New(string(b))
 	}
 	// utils.Trace(utils.Cyan, "Leaving ServerRequest, everything looks good so far\n")
 	return b, nil

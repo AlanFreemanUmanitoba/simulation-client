@@ -20,42 +20,86 @@ import (
 
 var Router *gin.Engine = gin.New()
 
-// Helper function for most display handlers. Main purpose is to maintain
-// synchronisation between the data on the server and the local copy.
+// Authentication. Should eventually become middleware.
 //
-//	Returns the username and any error.
-//	Sets 'LastVisitedPage' so we can return here after an action.
+// Maintains synchronisation between data on the server and on the client.
+//
+//	If the client does not know enough to establish a connection, redirects
+//	to login and aborts, so that nothing else happens for the rest of the
+//	handler chain.
+//
+//	If the server does not respond or returns an error, redirects to an
+//	error page and aborts.
+//
+//	If the server responds correctly, returns the username and any error.
+//
+// Sets 'LastVisitedPage' so we can return here after an action.
 func synchWithServer(ctx *gin.Context) (string, error) {
 	// Comment for less detailed diagnostics
 	_, file, no, ok := runtime.Caller(1)
 	if ok {
-		utils.Trace(utils.Yellow, fmt.Sprintf(" UserStatus was called from %s#%d\n", file, no))
+		utils.Trace(utils.Yellow, fmt.Sprintf(" SynchWithServer was called from %s#%d\n", file, no))
+	}
+
+	// Check whether the server is responding at all.
+	// TODO some code duplication here.
+	body, err := api.ServerRequest(models.Users["admin"].ApiKey, `admin/user/admin`)
+	if (err != nil) || (body == nil) {
+		errmsg := fmt.Sprintf("Sorry, the server is not functioning :%v\n", err)
+		utils.Trace(utils.Red, errmsg)
+		utils.DisplayError(ctx, errmsg)
+		ctx.Abort()
+		return "admin", err
 	}
 
 	// find out what the browser knows
-	username := utils.GUESTUSER
+	userCookie, err := ctx.Request.Cookie("user")
+	if err != nil {
+		utils.Trace(utils.BrightMagenta, fmt.Sprintf("Could not retrieve any user cookie becase of %v\n", err))
+		ctx.Request.URL.Path = "/admin/choose-players"
+		Router.HandleContext(ctx)
+		ctx.Abort()
+		return "Unknown User", err
+	}
+
+	// Comment for briefer diagnostics
+	fmt.Println("Cookie returned:", userCookie.Value)
+	// TODO username := userCookie.Value
+	username := userCookie.Value
 	user := models.Users[username]
+	//TODO this ought to be impossible, so maybe this test is overkill
 	if user.ApiKey == "" {
-		utils.Trace(utils.Red, "ERROR: User has no api key\n")
-		return username, nil
+		utils.Trace(utils.BrightMagenta, "ERROR: User has no api key\n")
+		ctx.Request.URL.Path = "/admin/choose-players"
+		Router.HandleContext(ctx)
+		ctx.Abort()
+		return "No API key", err
 	}
 
 	// find out what the server knows
-	body, err := api.ServerRequest(user.ApiKey, `admin/user/`+username)
+	//TODO this ought to be impossible, so maybe this test is overkill
+	body, err = api.ServerRequest(user.ApiKey, `admin/user/`+username)
 	if err != nil {
-		log.Printf("The server was upset, and replied :%v\n", err)
+		utils.Trace(utils.BrightMagenta, fmt.Sprintf("The server was not functioning :%v\n", err))
+		utils.DisplayError(ctx, "The API server is not functioning")
+		ctx.Abort()
 		return username, err
 	}
 	synched_user := new(models.User)          // Isolated user record, not added to the list of users.
 	err = json.Unmarshal(body, &synched_user) // it's only there as a receptacle for the server data.
 	if err != nil {
-		log.Printf("We couldn't make sense of what the server says about user %s", username)
+		utils.Trace(
+			utils.BrightMagenta,
+			fmt.Sprintf("Couldn't make sense of what the server said about user %s :%v\n", username, err))
+		ctx.Request.URL.Path = "/admin/choose-players"
+		Router.HandleContext(ctx)
+		ctx.Abort()
 		return username, err
 	}
-	// userDetails, _ := json.MarshalIndent(synched_user, " ", " ")
-	// utils.Trace(utils.Yellow, fmt.Sprintf("The server sent this user record: %s\n", string(userDetails)))
+	userDetails, _ := json.MarshalIndent(synched_user, " ", " ")
+	utils.Trace(utils.BrightMagenta, fmt.Sprintf("The server sent this user record: %s\n", string(userDetails)))
 
-	utils.Trace(utils.Yellow, fmt.Sprintf(
+	utils.Trace(utils.BrightMagenta, fmt.Sprintf(
 		"The server sent a user record which says the current simulation is %d; the client says it is %d\n",
 		synched_user.CurrentSimulationID,
 		models.Users[username].CurrentSimulationID,
@@ -69,12 +113,15 @@ func synchWithServer(ctx *gin.Context) (string, error) {
 		// Resynchronise
 		if !fetch.FetchUserObjects(ctx, username) {
 			utils.Trace(utils.Red, fmt.Sprintf("ERROR: Could not retrieve data for user %s\n", username))
-			return username, nil
+			ctx.Request.URL.Path = "/admin/choose-players"
+			Router.HandleContext(ctx)
+			ctx.Abort()
+			return username, fmt.Errorf("could not retrieve data for user %s", username)
 		}
 	}
 
 	models.Users[username].LastVisitedPage = ctx.Request.URL.Path
-	utils.Trace(utils.Yellow, fmt.Sprintf("User %s is good to go\n", username))
+	utils.Trace(utils.BrightMagenta, fmt.Sprintf("User %s is good to go\n", username))
 	return username, nil
 }
 
@@ -258,7 +305,7 @@ func ShowIndexPage(ctx *gin.Context) {
 	}
 	username, err := synchWithServer(ctx)
 	if err != nil {
-		utils.DisplayError(ctx, " Could not retrieve data from Server while trying to display the Index Page ")
+		ctx.Abort()
 		return
 	}
 

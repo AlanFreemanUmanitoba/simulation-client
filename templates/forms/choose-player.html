@@ -11,7 +11,7 @@
                 {{ if .IsLocked}}
                 <a class="w3-disabled" style="text-decoration:none"  >{{ .UserName}}</a>
                 {{ else }}
-                <a href="/play-as/{{ .UserName }}" style="text-decoration:none"  >{{ .UserName}}</a>
+                <a href="/admin/play-as/{{ .UserName }}" style="text-decoration:none"  >{{ .UserName}}</a>
                 {{ end }}
             </li>
             {{ end }}

@@ -10,3 +10,9 @@
 
 ## Templating
 * https://docs.gofiber.io/template/next/html/TEMPLATES_CHEATSHEET/  
+
+## Flow handling
+* https://stackoverflow.com/questions/32467002/failed-to-abort-context-gin
+* https://stackoverflow.com/questions/43799703/how-to-do-http-error-handling-in-go-language
+* https://nicolasmerouze.notion.site/Build-Your-Own-Web-Framework-In-Go-aeb292aa728149fa95ade6362f75f571
+* https://masteringbackend.com/posts/gin-framework

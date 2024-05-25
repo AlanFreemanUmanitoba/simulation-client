@@ -4,6 +4,7 @@
 package display
 
 import (
+	"capfront/api"
 	"capfront/models"
 	"capfront/utils"
 	"fmt"
@@ -37,4 +38,21 @@ func Lock(ctx *gin.Context) {
 		"Title": "Choose player",
 		"users": models.AdminUserList,
 	})
+}
+
+func SelectUser(ctx *gin.Context) {
+	u := ctx.Param("username")
+
+	utils.Trace(utils.Yellow, fmt.Sprintf("user %s will play\n", u))
+	// lock this user
+	_, err := api.ServerRequest(models.Users[u].ApiKey, `admin/lock/`+u)
+	if err != nil {
+		utils.DisplayError(ctx, fmt.Sprintf("Could not play as user %s. It's just possible somebody else got in first", u))
+		ctx.Abort()
+		return
+	}
+	models.Users[u].IsLocked = true
+	http.SetCookie(ctx.Writer, &http.Cookie{Name: "user", Value: u, Path: "/"})
+	ctx.Request.URL.Path = `/`
+	Router.HandleContext(ctx)
 }

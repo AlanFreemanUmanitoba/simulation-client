@@ -58,7 +58,7 @@ func ActionHandler(ctx *gin.Context) {
 	}
 	var param string
 
-	// Basic check: validate the syntax if the action parameter
+	// Basic check: validate the syntax of the action parameter
 	err := ctx.ShouldBindUri(&param)
 	if err != nil {
 		fmt.Println("Malformed URL", err)
